@@ -1,168 +1,25 @@
 class ActiveCampaign
   module Client
-    # List for all Active Campaign API and their method
     # For more information visit http://www.activecampaign.com/api/overview.php
-    # TODO: Refactor this!
-    #       Need best practice to grouping APIs
-    def action_calls
-      api_list = {
-        # Account View
-        account_view: { method: 'get' },
+    def generate_action_calls
+      # API V3 here
+      {
+        connection: 'connections',
+        customer: 'ecomCustomers',
+        order: 'ecomOrders',
+        contact: 'contacts'
+      }.inject({}) do |api_list, routes|
+        (method_key, api_route) = routes
+        api_list["#{method_key}_list".to_sym] = { method: 'get', path: "/#{api_route}" }
+        api_list["#{method_key}_add".to_sym] = { method: 'post', path: "/#{api_route}" }
+        api_list["#{method_key}_delete".to_sym] = { method: 'delete', path: "/#{api_route}/:id" }
 
-        # Automation
-        automation_contact_add:    { method: 'post' },
-        automation_contact_list:   { method: 'get'  },
-        automation_contact_remove: { method: 'post' },
-        automation_contact_view:   { method: 'get'  },
-        automation_list:           { method: 'get'  },
+        # Not implemented:
+        #api_list["#{method_key}_edit".to_sym] = { method: 'put', path: "/#{api_route}/:id" }
+        #api_list["#{method_key}_get".to_sym] = { method: 'get', path: "/#{api_route}/:id" }
 
-        # Branding
-        branding_edit: { method: 'post' },
-        branding_view: { method: 'get'  },
-
-        # Campaign
-        campaign_create:                       { method: 'post' },
-        campaign_delete:                       { method: 'get'  },
-        campaign_delete_list:                  { method: 'get'  },
-        campaign_list:                         { method: 'get'  },
-        campaign_paginator:                    { method: 'get'  },
-        campaign_report_bounce_list:           { method: 'get'  },
-        campaign_report_bounce_totals:         { method: 'get'  },
-        campaign_report_forward_list:          { method: 'get'  },
-        campaign_report_forward_totals:        { method: 'get'  },
-        campaign_report_link_list:             { method: 'get'  },
-        campaign_report_link_totals:           { method: 'get'  },
-        campaign_report_open_list:             { method: 'get'  },
-        campaign_report_open_totals:           { method: 'get'  },
-        campaign_report_totals:                { method: 'get'  },
-        campaign_report_unopen_list:           { method: 'get'  },
-        campaign_report_unsubscription_list:   { method: 'get'  },
-        campaign_report_unsubscription_totals: { method: 'get'  },
-        campaign_send:                         { method: 'post' },
-        campaign_status:                       { method: 'get'  },
-
-        # Contact
-        contact_add:             { method: 'post' },
-        contact_automation_list: { method: 'get'  },
-        contact_delete:          { method: 'get'  },
-        contact_delete_list:     { method: 'post' },
-        contact_edit:            { method: 'post' },
-        contact_list:            { method: 'get'  },
-        contact_note_add:        { method: 'post' },
-        contact_note_delete:     { method: 'get'  },
-        contact_note_edit:       { method: 'post' },
-        contact_paginator:       { method: 'get'  },
-        contact_sync:            { method: 'post' },
-        contact_tag_add:         { method: 'post' },
-        contact_tag_remove:      { method: 'post' },
-        contact_view:            { method: 'get'  },
-        contact_view_email:      { method: 'get'  },
-        contact_view_hash:       { method: 'get'  },
-
-        # Deal
-        deal_add:             { method: 'post' },
-        deal_delete:          { method: 'post' },
-        deal_edit:            { method: 'post' },
-        deal_get:             { method: 'get'  },
-        deal_list:            { method: 'get'  },
-        deal_note_add:        { method: 'post' },
-        deal_note_edit:       { method: 'post' },
-        deal_pipeline_add:    { method: 'post' },
-        deal_pipeline_delete: { method: 'post' },
-        deal_pipeline_edit:   { method: 'post' },
-        deal_pipeline_list:   { method: 'get'  },
-        deal_stage_add:       { method: 'post' },
-        deal_stage_delete:    { method: 'post' },
-        deal_stage_edit:      { method: 'post' },
-        deal_stage_list:      { method: 'get'  },
-        deal_task_add:        { method: 'post' },
-        deal_task_edit:       { method: 'post' },
-        deal_tasktype_add:    { method: 'post' },
-        deal_tasktype_delete: { method: 'post' },
-        deal_tasktype_edit:   { method: 'post' },
-
-        # Form
-        form_getforms: { method: 'get' },
-        form_html:     { method: 'get' },
-
-        # Group
-        group_add:         { method: 'post' },
-        group_delete:      { method: 'get'  },
-        group_delete_list: { method: 'get'  },
-        group_edit:        { method: 'post' },
-        group_list:        { method: 'get'  },
-        group_view:        { method: 'get'  },
-
-        # List
-        list_add:          { method: 'post' },
-        list_delete:       { method: 'get'  },
-        list_delete_list:  { method: 'get'  },
-        list_edit:         { method: 'post' },
-        list_field_add:    { method: 'post' },
-        list_field_delete: { method: 'post' },
-        list_field_edit:   { method: 'post' },
-        list_field_view:   { method: 'get'  },
-        list_list:         { method: 'get'  },
-        list_paginator:    { method: 'get'  },
-        list_view:         { method: 'get'  },
-
-        # Message
-        message_add:                  { method: 'post' },
-        message_delete:               { method: 'get'  },
-        message_delete_list:          { method: 'get'  },
-        message_edit:                 { method: 'post' },
-        message_list:                 { method: 'get'  },
-        message_template_add:         { method: 'post' },
-        message_template_delete:      { method: 'post' },
-        message_template_delete_list: { method: 'post' },
-        message_template_edit:        { method: 'post' },
-        message_template_export:      { method: 'get'  },
-        message_template_import:      { method: 'get'  },
-        message_template_list:        { method: 'get'  },
-        message_template_view:        { method: 'get'  },
-        message_view:                 { method: 'get'  },
-
-        # Organization
-        organization_list: { method: 'get' },
-
-        # Settings
-        settings_edit: { method: 'post' },
-
-        # Single Sign On
-        singlesignon: { method: 'post' },
-
-        # Site & Event Tracking
-        track_event_delete:          { method: 'delete', path: '/2/track/event' },
-        track_event_list:            { method: 'get',    path: '/2/track/event' },
-        track_event_status_edit:     { method: 'post',   path: '/2/track/event' },
-        track_site_list:             { method: 'get',    path: '/2/track/site'  },
-        track_site_status_edit:      { method: 'post',   path: '/2/track/site'  },
-        track_site_whitelist_add:    { method: 'post',   path: '/2/track/site'  },
-        track_site_whitelist_delete: { method: 'delete', path: '/2/track/site'  },
-        track_event_add:             { method: 'post',   endpoint: 'https://trackcmp.net', path: '/event' },
-
-        # Tag
-        tags_list: { method: 'get' },
-
-        # User
-        user_add:           { method: 'post' },
-        user_delete:        { method: 'get'  },
-        user_delete_list:   { method: 'get'  },
-        user_edit:          { method: 'post' },
-        user_list:          { method: 'get'  },
-        user_me:            { method: 'get'  },
-        user_view:          { method: 'get'  },
-        user_view_email:    { method: 'get'  },
-        user_view_username: { method: 'get'  },
-
-        # Webhook
-        webhook_add:    { method: 'post' },
-        webhook_delete: { method: 'get'  },
-        webhook_edit:   { method: 'post' },
-        webhook_events: { method: 'get'  },
-        webhook_list:   { method: 'get'  },
-        webhook_view:   { method: 'get'  }
-      }
+        api_list
+      end
     end
   end
 end

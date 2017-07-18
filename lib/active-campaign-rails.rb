@@ -7,7 +7,7 @@ class ActiveCampaign
   # Makes the Client's methods available to an instance of the ActiveCampaign class
   include ActiveCampaign::Client
 
-  attr_reader :api_endpoint, :api_key
+  attr_reader :api_endpoint, :api_key, :action_calls
 
   def initialize(args)
 
@@ -19,8 +19,9 @@ class ActiveCampaign
     # Set default api_output to json if not set
     @api_output = 'json' if @api_output == nil
 
+    @action_calls = generate_action_calls
   end
-  
+
 
   def method_missing(api_action, *args, &block)
 
@@ -28,7 +29,7 @@ class ActiveCampaign
     api_url = generate_api_url(api_action)
 
     # Check method for api_action given
-    case action_calls[api_action][:method]
+    case @action_calls[api_action][:method]
     when 'get'
 
       # Generate API parameter from given argument
@@ -45,28 +46,32 @@ class ActiveCampaign
       return response.body
 
     when 'post'
-
+# client = ActiveCampaign.new(api_endpoint: Settings.active_campaign.api_endpoint, api_key: Settings.active_campaign.api_key)
+# client.connection_add({ connection: { service: 'foo', externalid: 1, name: 'foo', logoUrl: 'foo', linkUrl: 'foo' }})
+# client.customer_add({ ecomCustomer: { connectionid: 4, externalid: 123, email: 'alice@example.com' }})
+# client.contact_add({ contact: { email: 'test123@example.com' } })
       # API parameters for POST method
       api_params = args.first
-
-      # For event tracking the visit param must have a json value
-      if visit = api_params[:visit]
-        api_params[:visit] = visit.to_json if visit.is_a?(Hash)
-      end
-
-      # Make a call to API server with POST method
-      response = RestClient.post(api_url, api_params)
+      response = RestClient.post(api_url, api_params.to_json, { content_type: :json, accepnt: :json })
 
       # Return response from API server
       # Default to JSON
       return response.body
+    when 'put'
+      api_params = args.first.merge(api_key: @api_key)
+      api_url = "#{@api_endpoint}#{@action_calls[api_action][:path]}".gsub(/:id/, api_params[:id].to_s)
 
+      # Make a call to API server with DELETE method
+      response = RestClient::Request.execute(method: :put, url: api_url, headers: { params: api_params })
+
+      # Return response from API server
+      # Default to JSON
+      return response.body
     when 'delete'
-
-      # API parameters for DELETE method
-      api_params = args.first.merge(api_key: @api_key, api_output: @api_output)
-
-      api_url = "#{action_calls[api_action][:endpoint] || @api_endpoint}#{action_calls[api_action][:path] || '/admin/api.php'}"
+#client.connection_delete(id: 3)
+#client.customer_delete(id: 1)
+      api_params = args.first.merge(api_key: @api_key)
+      api_url = "#{@api_endpoint}#{@action_calls[api_action][:path]}".gsub(/:id/, api_params[:id].to_s)
 
       # Make a call to API server with DELETE method
       response = RestClient::Request.execute(method: :delete, url: api_url, headers: { params: api_params })
@@ -74,16 +79,14 @@ class ActiveCampaign
       # Return response from API server
       # Default to JSON
       return response.body
-
     end
-
   end
 
   private
-    def generate_api_url api_action
-      host = action_calls[api_action][:endpoint] || @api_endpoint
-      path = action_calls[api_action][:path]     || '/admin/api.php'
+    def generate_api_url(api_action)
+      host = @api_endpoint
+      path = @action_calls[api_action.to_sym][:path]
 
-      "#{host}#{path}?api_key=#{@api_key}&api_action=#{api_action.to_s}&api_output=#{@api_output}"
+      "#{host}#{path}?api_key=#{@api_key}"
     end
 end
