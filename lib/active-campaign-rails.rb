@@ -31,12 +31,10 @@ class ActiveCampaign
     # Check method for api_action given
     case @action_calls[api_action][:method]
     when 'get'
-
-      # Generate API parameter from given argument
-      api_params = (args.any?) ? args.first.map{|k,v| "#{k}=#{v}"}.join('&') : nil
-
-      # Join API url and API parameters
-      api_url = api_params ? "#{api_url}&#{api_params}" : api_url
+# client.customer_list
+# client.customer_get(id: 1)
+      api_params = args.first
+      api_url = api_params.present? && api_params.has_key?(:id) ? api_url.gsub(/:id/, api_params[:id].to_s) : api_url
 
       # Make a call to API server with GET method
       response = RestClient.get(api_url)
@@ -50,19 +48,17 @@ class ActiveCampaign
 # client.connection_add({ connection: { service: 'foo', externalid: 1, name: 'foo', logoUrl: 'foo', linkUrl: 'foo' }})
 # client.customer_add({ ecomCustomer: { connectionid: 4, externalid: 123, email: 'alice@example.com' }})
 # client.contact_add({ contact: { email: 'test123@example.com' } })
-      # API parameters for POST method
       api_params = args.first
       response = RestClient.post(api_url, api_params.to_json, { content_type: :json, accepnt: :json })
 
-      # Return response from API server
-      # Default to JSON
       return response.body
     when 'put'
+#client.customer_edit({ id: 1, options: { ecomCustomer: { externalid: 123 } } })
       api_params = args.first.merge(api_key: @api_key)
-      api_url = "#{@api_endpoint}#{@action_calls[api_action][:path]}".gsub(/:id/, api_params[:id].to_s)
+      api_url = api_params.has_key?(:id) ? api_url.gsub(/:id/, api_params[:id].to_s) : api_url
 
       # Make a call to API server with DELETE method
-      response = RestClient::Request.execute(method: :put, url: api_url, headers: { params: api_params })
+      response = RestClient.put(api_url, api_params[:options].to_json, { content_type: :json, accepnt: :json })
 
       # Return response from API server
       # Default to JSON
