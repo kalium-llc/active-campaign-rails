@@ -24,13 +24,12 @@ class ActiveCampaign
   def method_missing(api_action, id = nil, options = {})
 # client = ActiveCampaign.new(api_endpoint: Settings.active_campaign.api_endpoint, api_key: Settings.active_campaign.api_key)
 # client.contact_list
-# client.contact_add(nil, { email: 'test123@example.com' })
+# client.contact_add(nil, { email: 'test123@example.com' }) # TODO: Remove requirement here for nil
 # client.contact_get(6)
 # client.contact_delete(6)
 
     # Generate api_url
     api_url = generate_api_url(api_action)
-
     api_url = "#{@api_endpoint}#{@action_calls[api_action][:path]}".gsub(/:id/, id.to_s) if id.present?
 
     response = RestClient::Request.execute(
