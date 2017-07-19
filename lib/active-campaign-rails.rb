@@ -10,7 +10,6 @@ class ActiveCampaign
   attr_reader :api_endpoint, :api_key, :action_calls
 
   def initialize(args)
-
     # Parse args into instance_variable
     args.each do |k,v|
       instance_variable_set("@#{k}", v) unless v.nil?
@@ -22,60 +21,30 @@ class ActiveCampaign
     @action_calls = generate_action_calls
   end
 
-
-  def method_missing(api_action, *args, &block)
+  def method_missing(api_action, id = nil, options = {})
+# client = ActiveCampaign.new(api_endpoint: Settings.active_campaign.api_endpoint, api_key: Settings.active_campaign.api_key)
+# client.contact_list
+# client.contact_add(nil, { email: 'test123@example.com' })
+# client.contact_get(6)
+# client.contact_delete(6)
 
     # Generate api_url
     api_url = generate_api_url(api_action)
 
-    # Check method for api_action given
-    case @action_calls[api_action][:method]
-    when 'get'
-# client.customer_list
-# client.customer_get(id: 1)
-      api_params = args.first
-      api_url = api_params.present? && api_params.has_key?(:id) ? api_url.gsub(/:id/, api_params[:id].to_s) : api_url
+    api_url = "#{@api_endpoint}#{@action_calls[api_action][:path]}".gsub(/:id/, id.to_s) if id.present?
 
-      # Make a call to API server with GET method
-      response = RestClient.get(api_url)
+    response = RestClient::Request.execute(
+      method: @action_calls[api_action][:method],
+      url: api_url,
+      headers: {
+        params: {
+          api_key: @api_key
+        }
+      },
+      payload: options.any? ? { @action_calls[api_action][:data_key] => options }.to_json : nil
+    )
 
-      # Return response from API server
-      # Default to JSON
-      return response.body
-
-    when 'post'
-# client = ActiveCampaign.new(api_endpoint: Settings.active_campaign.api_endpoint, api_key: Settings.active_campaign.api_key)
-# client.connection_add({ connection: { service: 'foo', externalid: 1, name: 'foo', logoUrl: 'foo', linkUrl: 'foo' }})
-# client.customer_add({ ecomCustomer: { connectionid: 4, externalid: 123, email: 'alice@example.com' }})
-# client.contact_add({ contact: { email: 'test123@example.com' } })
-      api_params = args.first
-      response = RestClient.post(api_url, api_params.to_json, { content_type: :json, accepnt: :json })
-
-      return response.body
-    when 'put'
-#client.customer_edit({ id: 1, options: { ecomCustomer: { externalid: 123 } } })
-      api_params = args.first.merge(api_key: @api_key)
-      api_url = api_params.has_key?(:id) ? api_url.gsub(/:id/, api_params[:id].to_s) : api_url
-
-      # Make a call to API server with DELETE method
-      response = RestClient.put(api_url, api_params[:options].to_json, { content_type: :json, accepnt: :json })
-
-      # Return response from API server
-      # Default to JSON
-      return response.body
-    when 'delete'
-#client.connection_delete(id: 3)
-#client.customer_delete(id: 1)
-      api_params = args.first.merge(api_key: @api_key)
-      api_url = "#{@api_endpoint}#{@action_calls[api_action][:path]}".gsub(/:id/, api_params[:id].to_s)
-
-      # Make a call to API server with DELETE method
-      response = RestClient::Request.execute(method: :delete, url: api_url, headers: { params: api_params })
-
-      # Return response from API server
-      # Default to JSON
-      return response.body
-    end
+    return JSON.parse(response.body)
   end
 
   private
@@ -83,6 +52,6 @@ class ActiveCampaign
       host = @api_endpoint
       path = @action_calls[api_action.to_sym][:path]
 
-      "#{host}#{path}?api_key=#{@api_key}"
+      "#{host}#{path}"
     end
 end
