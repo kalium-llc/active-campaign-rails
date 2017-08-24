@@ -21,6 +21,7 @@ class ActiveCampaign
 
       # OLD API
       api_list[:contact_tag_add] = { method: 'post', api_action: 'contact_tag_add' }
+      api_list[:contact_view_email] = { method: 'post', api_action: 'contact_view_email' }
 
       api_list
     end
