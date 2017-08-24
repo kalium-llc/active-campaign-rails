@@ -32,6 +32,13 @@ class ActiveCampaign
     api_url = generate_api_url(api_action)
     api_url = "#{@api_endpoint}#{@action_calls[api_action][:path]}".gsub(/:id/, id.to_s) if id.present?
 
+    payload = nil
+    if options.has_key?(:payload) && @action_calls[api_action].has_key?(:api_action)
+      payload = options[:payload]
+    elsif options.any? && !@action_calls[api_action].has_key?(:api_action)
+      payload = { @action_calls[api_action][:data_key] => options }.to_json
+    end
+
     response = RestClient::Request.execute(
       method: @action_calls[api_action][:method],
       url: api_url,
@@ -40,7 +47,7 @@ class ActiveCampaign
           api_key: @api_key
         }
       },
-      payload: options.any? ? { @action_calls[api_action][:data_key] => options }.to_json : nil
+      payload: payload
     )
 
     return JSON.parse(response.body)
@@ -48,8 +55,14 @@ class ActiveCampaign
 
   private
     def generate_api_url(api_action)
-      host = @api_endpoint
-      path = @action_calls[api_action.to_sym][:path]
+      if @action_calls[api_action.to_sym].has_key?(:api_action)
+        host = @api_endpoint.gsub(/api\/3/, '')
+        path = "admin/api.php?api_key=#{@api_key}&api_action=#{@action_calls[api_action.to_sym][:api_action]}&api_output=json"
+      else
+        host = @api_endpoint
+        path = @action_calls[api_action.to_sym][:path]
+
+      end
 
       "#{host}#{path}"
     end

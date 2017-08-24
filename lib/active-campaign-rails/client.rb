@@ -3,7 +3,7 @@ class ActiveCampaign
     # For more information visit http://www.activecampaign.com/api/overview.php
     def generate_action_calls
       # API V3 here
-      {
+      api_list = {
         connection: 'connections',
         customer: 'ecomCustomers',
         order: 'ecomOrders',
@@ -18,6 +18,11 @@ class ActiveCampaign
 
         api_list
       end
+
+      # OLD API
+      api_list[:contact_tag_add] = { method: 'post', api_action: 'contact_tag_add' }
+
+      api_list
     end
   end
 end
